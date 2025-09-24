@@ -1,0 +1,195 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: conx-postgres
+    environment:
+      POSTGRES_DB: cmdb
+      POSTGRES_USER: cmdb_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cmdb_user -d cmdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - conx-network
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: conx-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-dev_password}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_memory_heap_initial__size: 2g
+      NEO4J_dbms_memory_heap_max__size: 4g
+      NEO4J_dbms_memory_pagecache_size: 2g
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - ./migrations/neo4j_init.cypher:/neo4j-init.cypher
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${NEO4J_PASSWORD:-dev_password}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - conx-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: conx-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - conx-network
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: conx-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cmdb_user:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/cmdb
+      NEO4J_URL: bolt://neo4j:${NEO4J_PASSWORD:-dev_password}@neo4j:7687
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - go_mod_cache:/go/pkg/mod
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - conx-network
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          target: /app
+        - action: sync+restart
+          path: ./
+          target: /app
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: conx-frontend
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - node_modules_cache:/app/node_modules
+    networks:
+      - conx-network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./web
+          target: /app
+        - action: sync+restart
+          path: ./web/
+          target: /app
+
+  # Development database initialization service
+  db-init:
+    image: neo4j:5-community
+    container_name: conx-db-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-dev_password}
+    volumes:
+      - ./migrations/neo4j_init.cypher:/neo4j-init.cypher
+    command: >
+      bash -c "
+        echo 'Waiting for Neo4j to be ready...' &&
+        until cypher-shell -u neo4j -p ${NEO4J_PASSWORD:-dev_password} 'RETURN 1' 2>/dev/null; do
+          echo 'Waiting for Neo4j...'
+          sleep 2
+        done &&
+        echo 'Neo4j is ready, initializing graph database...' &&
+        cypher-shell -u neo4j -p ${NEO4J_PASSWORD:-dev_password} -f /neo4j-init.cypher &&
+        echo 'Graph database initialization completed'
+      "
+    networks:
+      - conx-network
+    profiles:
+      - init
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  neo4j_logs:
+  redis_data:
+  go_mod_cache:
+  node_modules_cache:
+
+networks:
+  conx-network:
+    driver: bridge
+
+# Development profile for initialization
+profiles:
+  init:
+    services:
+      - postgres
+      - neo4j
+      - redis
+      - db-init
+  dev:
+    services:
+      - postgres
+      - neo4j
+      - redis
+      - api
+      - frontend
+  full:
+    services:
+      - postgres
+      - neo4j
+      - redis
+      - db-init
+      - api
+      - frontend

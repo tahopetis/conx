@@ -243,7 +243,7 @@ bench:
 docs:
 	@echo "Generating documentation..."
 	@if command -v godoc >/dev/null 2>&1; then \
-		echo "Documentation available at: http://localhost:6060/pkg/github.com/conx/cmdb/"; \
+		echo "Documentation available at: http://localhost:6060/pkg/connect/"; \
 		godoc -http=:6060; \
 	else \
 		echo "godoc not found. Install with: go install golang.org/x/tools/cmd/godoc@latest"; \

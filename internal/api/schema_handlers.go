@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/conx/conx/internal/models"
-	"github.com/conx/conx/internal/repositories"
+	"connect/internal/models"
+	"connect/internal/repositories"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )

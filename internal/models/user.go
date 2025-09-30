@@ -239,13 +239,13 @@ type UserBulkAction struct {
 
 // UserBulkActionResult represents the result of bulk actions
 type UserBulkActionResult struct {
-	SuccessCount int                    `json:"success_count"`
-	FailedCount  int                    `json:"failed_count"`
-	Results      []UserBulkActionResult  `json:"results"`
+	SuccessCount int                     `json:"success_count"`
+	FailedCount  int                     `json:"failed_count"`
+	Results      []UserBulkActionItemResult `json:"results"`
 }
 
-// UserBulkActionResult represents the result of a single bulk action
-type UserBulkActionResult struct {
+// UserBulkActionItemResult represents the result of a single bulk action
+type UserBulkActionItemResult struct {
 	UserID uuid.UUID `json:"user_id"`
 	Success bool      `json:"success"`
 	Error   string    `json:"error,omitempty"`

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/conx/cmdb/internal/database"
+	"connect/internal/database"
 	"github.com/rs/zerolog/log"
 )
 

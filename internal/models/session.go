@@ -1,9 +1,21 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrInvalidUserID         = errors.New("invalid user ID")
+	ErrInvalidToken          = errors.New("invalid token")
+	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
+	ErrInvalidIPAddress      = errors.New("invalid IP address")
+	ErrInvalidExpirationTime = errors.New("invalid expiration time")
+	ErrInvalidRevocationTime = errors.New("invalid revocation time")
+	ErrInvalidSessionID      = errors.New("invalid session ID")
+	ErrInvalidAction         = errors.New("invalid action")
 )
 
 // Session represents a user session

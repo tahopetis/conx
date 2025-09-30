@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/conx/conx/internal/config"
-	"github.com/conx/conx/internal/repositories"
+	"connect/internal/config"
+	"connect/internal/repositories"
 	"github.com/gorilla/mux"
 )
 

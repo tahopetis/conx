@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/conx/cmdb/internal/database"
-	"github.com/conx/cmdb/internal/models"
+	"connect/internal/database"
+	"connect/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

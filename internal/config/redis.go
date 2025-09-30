@@ -2,16 +2,12 @@ package config
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 )
 
-// RedisConfig holds the configuration for Redis connections
-type RedisConfig struct {
-	Host         string
-	Port         int
-	Password     string
-	DB           int
+// ExtendedRedisConfig holds extended Redis configuration with additional fields
+type ExtendedRedisConfig struct {
+	RedisConfig
 	PoolSize     int
 	MinIdleConns int
 	MaxRetries   int
@@ -24,13 +20,15 @@ type RedisConfig struct {
 	Enabled      bool
 }
 
-// LoadRedisConfig loads Redis configuration from environment variables
-func LoadRedisConfig() (*RedisConfig, error) {
-	config := &RedisConfig{
-		Host:         getEnv("REDIS_HOST", "localhost"),
-		Port:         getEnvAsInt("REDIS_PORT", 6379),
-		Password:     getEnv("REDIS_PASSWORD", ""),
-		DB:           getEnvAsInt("REDIS_DB", 0),
+// LoadExtendedRedisConfig loads extended Redis configuration from environment variables
+func LoadExtendedRedisConfig() (*ExtendedRedisConfig, error) {
+	config := &ExtendedRedisConfig{
+		RedisConfig: RedisConfig{
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnvAsInt("REDIS_PORT", 6379),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvAsInt("REDIS_DB", 0),
+		},
 		PoolSize:     getEnvAsInt("REDIS_POOL_SIZE", 10),
 		MinIdleConns: getEnvAsInt("REDIS_MIN_IDLE_CONNS", 2),
 		MaxRetries:   getEnvAsInt("REDIS_MAX_RETRIES", 3),
@@ -39,16 +37,11 @@ func LoadRedisConfig() (*RedisConfig, error) {
 	}
 
 	// Parse timeout durations
-	var err error
 	config.DialTimeout = getEnvAsDuration("REDIS_DIAL_TIMEOUT", 5*time.Second)
 	config.ReadTimeout = getEnvAsDuration("REDIS_READ_TIMEOUT", 3*time.Second)
 	config.WriteTimeout = getEnvAsDuration("REDIS_WRITE_TIMEOUT", 3*time.Second)
 	config.PoolTimeout = getEnvAsDuration("REDIS_POOL_TIMEOUT", 4*time.Second)
 	config.IdleTimeout = getEnvAsDuration("REDIS_IDLE_TIMEOUT", 5*time.Minute)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse Redis timeout configuration: %w", err)
-	}
 
 	// Validate configuration
 	if config.PoolSize <= 0 {
@@ -65,12 +58,12 @@ func LoadRedisConfig() (*RedisConfig, error) {
 }
 
 // GetRedisAddr returns the Redis connection address
-func (c *RedisConfig) GetRedisAddr() string {
+func (c *ExtendedRedisConfig) GetRedisAddr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
 // GetRedisURL returns the Redis connection URL
-func (c *RedisConfig) GetRedisURL() string {
+func (c *ExtendedRedisConfig) GetRedisURL() string {
 	if c.Password != "" {
 		return fmt.Sprintf("redis://%s:%s@%s:%d/%d", c.Password, c.Password, c.Host, c.Port, c.DB)
 	}
@@ -78,7 +71,7 @@ func (c *RedisConfig) GetRedisURL() string {
 }
 
 // Validate validates the Redis configuration
-func (c *RedisConfig) Validate() error {
+func (c *ExtendedRedisConfig) Validate() error {
 	if c.Host == "" {
 		return fmt.Errorf("REDIS_HOST is required")
 	}
@@ -119,28 +112,9 @@ func (c *RedisConfig) Validate() error {
 }
 
 // String returns a string representation of the Redis configuration
-func (c *RedisConfig) String() string {
+func (c *ExtendedRedisConfig) String() string {
 	return fmt.Sprintf(
-		"RedisConfig{Host: %s, Port: %d, DB: %d, PoolSize: %d, MinIdleConns: %d, Enabled: %v}",
+		"ExtendedRedisConfig{Host: %s, Port: %d, DB: %d, PoolSize: %d, MinIdleConns: %d, Enabled: %v}",
 		c.Host, c.Port, c.DB, c.PoolSize, c.MinIdleConns, c.Enabled,
 	)
-}
-
-// Helper functions for environment variable parsing
-func getEnvAsInt(key string, defaultValue int) int {
-	if value := getEnv(key, ""); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
-func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
-	if value := getEnv(key, ""); value != "" {
-		if durationValue, err := time.ParseDuration(value); err == nil {
-			return durationValue
-		}
-	}
-	return defaultValue
 }

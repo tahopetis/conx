@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/conx/cmdb/internal/logger"
-	"github.com/rs/zerolog/log"
+	"connect/internal/logger"
 )
 
 var (

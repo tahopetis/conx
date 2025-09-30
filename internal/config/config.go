@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/spf13/viper"
@@ -348,4 +350,39 @@ func (c *Config) IsDevelopment() bool {
 // IsTesting returns true if the environment is testing
 func (c *Config) IsTesting() bool {
 	return c.Environment == "testing"
+}
+
+// Helper functions for environment variable parsing
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func getEnvAsInt(key string, defaultValue int) int {
+	if value := getEnv(key, ""); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsBool(key string, defaultValue bool) bool {
+	if value := getEnv(key, ""); value != "" {
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			return boolValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := getEnv(key, ""); value != "" {
+		if durationValue, err := time.ParseDuration(value); err == nil {
+			return durationValue
+		}
+	}
+	return defaultValue
 }

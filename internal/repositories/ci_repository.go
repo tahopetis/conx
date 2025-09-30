@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/conx/conx/internal/models"
+	"connect/internal/models"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"

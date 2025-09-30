@@ -289,7 +289,7 @@ func (r *RedisClient) Health(ctx context.Context) error {
 }
 
 // GetStats returns Redis statistics
-func (r *RedisClient) GetStats(ctx context.Context) (*redis.Info, error) {
+func (r *RedisClient) GetStats(ctx context.Context) (map[string]string, error) {
 	if !r.enabled {
 		return nil, fmt.Errorf("Redis is disabled")
 	}

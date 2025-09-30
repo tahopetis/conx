@@ -360,7 +360,7 @@ type UserRoleStats struct {
 }
 
 // RolePermissionStats represents role permission statistics
-type RoleStats struct {
+type RolePermissionStats struct {
 	TotalRolePermissions    int `json:"total_role_permissions"`
 	ActiveRolePermissions   int `json:"active_role_permissions"`
 	RolesWithPermissions    int `json:"roles_with_permissions"`

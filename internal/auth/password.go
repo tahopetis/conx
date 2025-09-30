@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strings"
 
@@ -156,20 +157,26 @@ func (s *PasswordService) GeneratePassword(length int) (string, error) {
 
 	password := make([]byte, length)
 	
+	// Helper function to get secure random int in range
+	secureRandIntn := func(max int) int {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
+		return int(n.Int64())
+	}
+	
 	// Ensure at least one character from each category
-	password[0] = upperChars[rand.Intn(len(upperChars))]
-	password[1] = lowerChars[rand.Intn(len(lowerChars))]
-	password[2] = numberChars[rand.Intn(len(numberChars))]
-	password[3] = specialChars[rand.Intn(len(specialChars))]
+	password[0] = upperChars[secureRandIntn(len(upperChars))]
+	password[1] = lowerChars[secureRandIntn(len(lowerChars))]
+	password[2] = numberChars[secureRandIntn(len(numberChars))]
+	password[3] = specialChars[secureRandIntn(len(specialChars))]
 	
 	// Fill the rest with random characters from all categories
 	for i := 4; i < length; i++ {
-		password[i] = allChars[rand.Intn(len(allChars))]
+		password[i] = allChars[secureRandIntn(len(allChars))]
 	}
 	
 	// Shuffle the password
 	for i := range password {
-		j := rand.Intn(len(password))
+		j := secureRandIntn(len(password))
 		password[i], password[j] = password[j], password[i]
 	}
 	

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/conx/cmdb/internal/models"
+	"connect/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"

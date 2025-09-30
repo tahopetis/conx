@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/conx/cmdb/internal/config"
+	"connect/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/conx/cmdb/internal/config"
-	"github.com/conx/cmdb/internal/database"
+	"connect/internal/config"
+	"connect/internal/database"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/rs/zerolog/log"
 )

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/conx/cmdb/internal/config"
+	"connect/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/redis/go-redis/v9"
@@ -16,17 +16,17 @@ func NewPostgresConnection(cfg *config.Config) (*pgxpool.Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, cfg.Database.URL)
+	pool, err := pgxpool.New(ctx, cfg.GetPostgreSQLConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create PostgreSQL connection pool: %w", err)
 	}
 
 	// Configure connection pool
-	pool.Config().MaxConns = int32(cfg.Database.MaxOpenConns)
-	pool.Config().MinConns = int32(cfg.Database.MaxIdleConns)
-	pool.Config().MaxConnLifetime = cfg.Database.ConnMaxLifetime
+	pool.Config().MaxConns = int32(cfg.Database.PostgreSQL.MaxOpenConns)
+	pool.Config().MinConns = int32(cfg.Database.PostgreSQL.MaxIdleConns)
+	pool.Config().MaxConnLifetime = cfg.Database.PostgreSQL.ConnMaxLifetime
 	pool.Config().HealthCheckPeriod = 1 * time.Minute
-	pool.Config().MaxConnIdleTime = 5 * time.Minute
+	pool.Config().MaxConnIdleTime = cfg.Database.PostgreSQL.ConnMaxIdleTime
 
 	// Test connection
 	if err := pool.Ping(ctx); err != nil {
@@ -43,12 +43,11 @@ func NewNeo4jConnection(cfg *config.Config) (neo4j.DriverWithContext, error) {
 
 	// Create Neo4j driver
 	driver, err := neo4j.NewDriverWithContext(
-		cfg.Neo4j.URL,
-		neo4j.BasicAuth(cfg.Neo4j.Username, cfg.Neo4j.Password, ""),
+		cfg.Database.Neo4j.URI,
+		neo4j.BasicAuth(cfg.Database.Neo4j.Username, cfg.Database.Neo4j.Password, ""),
 		func(c *neo4j.Config) {
-			c.MaxConnectionPoolSize = cfg.Neo4j.MaxPoolSize
+			c.MaxConnectionPoolSize = 50 // Default value
 			c.ConnectionAcquisitionTimeout = 30 * time.Second
-			c.SocketTimeout = 30 * time.Second
 			c.MaxTransactionRetryTime = 30 * time.Second
 		},
 	)
@@ -71,14 +70,14 @@ func NewRedisConnection(cfg *config.Config) (*redis.Client, error) {
 
 	// Create Redis client
 	client := redis.NewClient(&redis.Options{
-		Addr:         cfg.Redis.URL,
-		PoolSize:     cfg.Redis.PoolSize,
-		MinIdleConns: 5,
-		MaxIdleConns: 10,
-		DialTimeout:  5 * time.Second,
-		ReadTimeout:  3 * time.Second,
-		WriteTimeout: 3 * time.Second,
-		PoolTimeout:  4 * time.Second,
+		Addr:         cfg.GetRedisConnectionString(),
+		PoolSize:     cfg.Database.Redis.PoolSize,
+		MinIdleConns: cfg.Database.Redis.MinIdleConns,
+		MaxIdleConns: cfg.Database.Redis.PoolSize,
+		DialTimeout:  cfg.Database.Redis.DialTimeout,
+		ReadTimeout:  cfg.Database.Redis.ReadTimeout,
+		WriteTimeout: cfg.Database.Redis.WriteTimeout,
+		PoolTimeout:  cfg.Database.Redis.PoolTimeout,
 	})
 
 	// Test connection

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/conx/conx/internal/models"
+	"connect/internal/models"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
